@@ -101,9 +101,10 @@ ggplot(bls, aes(x=month, y = value, group = state)) +
         legend.text = element_text(size = 10)) +
   facet_geo(~ state, grid = "us_state_grid2", label = "code") +
   labs(title = "Which states have the sharpest increase in unemployment due to COVID-19?",
-       caption = "Source: Bureau of Labor Statistics",
+       caption = "Source: Bureau of Labor Statistics\ngithub.com/kelseygonzalez",
        x = "Month of 2020 (January - April)",
        y = "Unemployment Rate") 
+
 
 
 ggsave("bls_unemployment.png", width = 10, height = 6)
