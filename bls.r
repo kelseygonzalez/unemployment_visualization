@@ -68,16 +68,16 @@ bls <-
   bind_rows(bls_api("LASST560000000000003", startyear = 2020, endyear = 2020) %>% mutate(state = "Wyoming")) %>%
   dplyr::select(-c(year,period, latest, footnotes,seriesID))
 
-write_csv(bls, path = "bls_April.csv")
+write_csv(bls, path = "bls_May.csv")
 
 #### 
 # read in data and wrangle
 
-bls <- read_csv("bls_April.csv") %>% 
+bls <- read_csv("bls_May.csv") %>% 
   pivot_wider(id_cols = "state", names_from = periodName, values_from = value) %>% # change from long for to wide form
-  mutate(diff = (April - January)/100) %>%  # calculate the difference between april and january for color plotting 
+  mutate(diff = (May - January)/100) %>%  # calculate the difference between april and january for color plotting 
   pivot_longer(cols = -c(state, diff), names_to = "month", values_to = "value") %>% # switch back to long form for plotting 
-  mutate(month = fct_relevel(as.factor(month), c("January", "February", "March", "April")), # turn the month into a factor and reorder it 
+  mutate(month = fct_relevel(as.factor(month), c("January", "February", "March", "April", "May")), # turn the month into a factor and reorder it 
          state = str_replace(state, "_", " "), # replace the "_" in the state names with spaces
          value = value / 100) # to probably render the percents
 
