@@ -18,6 +18,7 @@ extrafont::loadfonts(device = "win", quiet = TRUE)
 # scrape the data from the US Bureau of Labor Statistics 
 bls <- 
   bls_api("LASST010000000000003", startyear = 2020, endyear = 2020) %>% mutate(state = "Alabama") %>%
+  bind_rows(bls_api("LASST020000000000003", startyear = 2020, endyear = 2020) %>% mutate(state = "Alaska")) %>%
   bind_rows(bls_api("LASST040000000000003", startyear = 2020, endyear = 2020) %>% mutate(state = "Arizona")) %>%
   bind_rows(bls_api("LASST050000000000003", startyear = 2020, endyear = 2020) %>% mutate(state = "Arkansas")) %>%
   bind_rows(bls_api("LASST060000000000003", startyear = 2020, endyear = 2020) %>% mutate(state = "California")) %>%
@@ -27,6 +28,7 @@ bls <-
   bind_rows(bls_api("LASST110000000000003", startyear = 2020, endyear = 2020) %>% mutate(state = "District of Columbia")) %>%
   bind_rows(bls_api("LASST120000000000003", startyear = 2020, endyear = 2020) %>% mutate(state = "Florida")) %>%
   bind_rows(bls_api("LASST130000000000003", startyear = 2020, endyear = 2020) %>% mutate(state = "Georgia")) %>%
+  bind_rows(bls_api("LASST150000000000003", startyear = 2020, endyear = 2020) %>% mutate(state = "Hawaii")) %>%
   bind_rows(bls_api("LASST160000000000003", startyear = 2020, endyear = 2020) %>% mutate(state = "Idaho")) %>%
   bind_rows(bls_api("LASST170000000000003", startyear = 2020, endyear = 2020) %>% mutate(state = "Illinois")) %>%
   bind_rows(bls_api("LASST180000000000003", startyear = 2020, endyear = 2020) %>% mutate(state = "Indiana")) %>%
@@ -68,16 +70,19 @@ bls <-
   bind_rows(bls_api("LASST560000000000003", startyear = 2020, endyear = 2020) %>% mutate(state = "Wyoming")) %>%
   dplyr::select(-c(year,period, latest, footnotes,seriesID))
 
-write_csv(bls, path = "bls_May.csv")
+write_csv(bls, path = "bls_July.csv") # save since you only get so many requests a day! 
 
 #### 
 # read in data and wrangle
 
-bls <- read_csv("bls_May.csv") %>% 
+bls <- read_csv("bls_July.csv") %>% 
   pivot_wider(id_cols = "state", names_from = periodName, values_from = value) %>% # change from long for to wide form
-  mutate(diff = (May - January)/100) %>%  # calculate the difference between april and january for color plotting 
-  pivot_longer(cols = -c(state, diff), names_to = "month", values_to = "value") %>% # switch back to long form for plotting 
-  mutate(month = fct_relevel(as.factor(month), c("January", "February", "March", "April", "May")), # turn the month into a factor and reorder it 
+  rowwise() %>% 
+  mutate(row_max = max(January:June), # calculate maximum unemployment by state
+         row_min = min(January:June), # calculate minimum unemployment by state
+         diff = (row_max - row_min)/100) %>%  # calculate the difference between max and min for color plotting 
+  pivot_longer(cols = -c(state, diff, row_max, row_min), names_to = "month", values_to = "value") %>% # switch back to long form for plotting 
+  mutate(month = fct_relevel(as.factor(month), c("January", "February", "March", "April", "May", "June")), # turn the month into a factor and reorder it 
          state = str_replace(state, "_", " "), # replace the "_" in the state names with spaces
          value = value / 100) # to probably render the percents
 
@@ -86,7 +91,7 @@ bls <- read_csv("bls_May.csv") %>%
 
 ggplot(bls, aes(x=month, y = value, group = state)) +
   geom_line(aes(color = diff), size = 2) +
-  scale_color_gradient(name = "Rise in\nUnemployment",
+  scale_color_gradient(name = "Max Rise in\nUnemployment",
                        low = "#fffeea", high = "#c03728", 
                        label = label_percent(accuracy = 1,
                                              trim = FALSE)) +
@@ -102,7 +107,7 @@ ggplot(bls, aes(x=month, y = value, group = state)) +
   facet_geo(~ state, grid = "us_state_grid2", label = "code") +
   labs(title = "Which states have the sharpest increase in unemployment due to COVID-19?",
        caption = "Source: Bureau of Labor Statistics\ngithub.com/kelseygonzalez",
-       x = "Month of 2020 (January - April)",
+       x = "Month of 2020 (January - June)",
        y = "Unemployment Rate") 
 
 
